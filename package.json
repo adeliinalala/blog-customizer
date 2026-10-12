@@ -7,7 +7,7 @@
     "start": "vite",
     "build": "vite build",
     "commit": "cz",
-    "check": "stylelint && eslint src/",
+    "check": "stylelint \"src/**/*.scss\" && eslint src/",
     "eslint": "eslint ./src/ --fix",
     "lint": "npm run stylelint && npm run eslint && npm run prettier",
     "prepare": "husky",
@@ -81,5 +81,8 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
+  },
+  "allowScripts": {
+    "unrs-resolver@1.11.1": true
   }
 }
