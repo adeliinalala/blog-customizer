@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { clsx } from 'clsx';
+import { useRef, useState } from 'react';
 import {
   backgroundColors,
   contentWidthArr,
@@ -11,6 +12,10 @@ import { ArrowButton } from 'src/ui/arrow-button';
 import { Button } from 'src/ui/button';
 import { RadioGroup } from 'src/ui/radio-group';
 import { Select } from 'src/ui/select';
+import { Separator } from 'src/ui/separator';
+import { Text } from 'src/ui/text';
+
+import { useSidebarClose } from './hooks/useSidebarClose';
 
 import type { ArticleStateType, OptionType } from 'src/constants/articleProps';
 
@@ -25,31 +30,16 @@ export const ArticleParamsForm = ({
   onApply,
   onReset,
 }: ArticleParamsFormProps): React.JSX.Element => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [formState, setFormState] = useState<ArticleStateType>(defaultArticleState);
-
+  const [radioGroupKey, setRadioGroupKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const handleOutsideClick = (event: PointerEvent): void => {
-      if (
-        event.target instanceof Node &&
-        !containerRef.current?.contains(event.target)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('pointerdown', handleOutsideClick);
-
-    return (): void => {
-      document.removeEventListener('pointerdown', handleOutsideClick);
-    };
-  }, [isOpen]);
+  useSidebarClose({
+    containerRef,
+    isSidebarOpen: isSidebarOpen,
+    onClose: () => setIsSidebarOpen(false),
+  });
 
   const handleChange = (
     field: keyof ArticleStateType
@@ -65,6 +55,7 @@ export const ArticleParamsForm = ({
   const handleReset = (): void => {
     setFormState(defaultArticleState);
     onReset();
+    setRadioGroupKey((prevKey) => prevKey + 1);
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
@@ -75,12 +66,20 @@ export const ArticleParamsForm = ({
   return (
     <div ref={containerRef}>
       <ArrowButton
-        isOpen={isOpen}
-        onClick={() => setIsOpen((prevIsOpen) => !prevIsOpen)}
+        isOpen={isSidebarOpen}
+        onClick={() => setIsSidebarOpen((prevIsSidebarOpen) => !prevIsSidebarOpen)}
       />
 
-      <aside className={`${styles.container} ${isOpen ? styles.container_open : ''}`}>
+      <aside
+        className={clsx(styles.container, {
+          [styles.container_open]: isSidebarOpen,
+        })}
+      >
         <form className={styles.form} onSubmit={handleSubmit}>
+          <Text as="h2" size={22} weight={800} uppercase>
+            Задайте параметры
+          </Text>
+
           <Select
             title="Шрифт"
             options={fontFamilyOptions}
@@ -89,6 +88,7 @@ export const ArticleParamsForm = ({
           />
 
           <RadioGroup
+            key={'fontSize-' + radioGroupKey}
             title="Размер шрифта"
             name="fontSize"
             options={fontSizeOptions}
@@ -103,6 +103,8 @@ export const ArticleParamsForm = ({
             onChange={handleChange('fontColor')}
           />
 
+          <Separator />
+
           <Select
             title="Цвет фона"
             options={backgroundColors}
@@ -110,9 +112,8 @@ export const ArticleParamsForm = ({
             onChange={handleChange('backgroundColor')}
           />
 
-          <RadioGroup
+          <Select
             title="Ширина контента"
-            name="contentWidth"
             options={contentWidthArr}
             selected={formState.contentWidth}
             onChange={handleChange('contentWidth')}
